@@ -9,26 +9,72 @@
 <script type="text/javascript" src="{{ url_for('static', filename='vendor/chartjs/chart.umd.js') }}" charset="utf-8"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='vendor/chartjs/chartjs-adapter-date-fns.js') }}" charset="utf-8"></script>
 
-<h2 id="calendar-title">Activity Calendar</h2>
-<div style="display: flex">
-  <div style="display: flex; flex-direction: column; margin-right: 5px; font-size: 0.75em;">
-    <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+<!-- 🧱 Row 1: Summary + New Words -->
+<div style="display: flex; gap: 1em; margin-bottom: 1.5em; flex-wrap: wrap;">
+  <!-- 📊 Summary -->
+  <div style="flex: 1 1 400px; background: #fdfdfd; padding: 1em; border-radius: 8px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #ddd;">
+    <h2 style="margin-top: 0;">Summary</h2>
+    <table class="statsSummary"
+           style="font-size: 0.9em; border-collapse: collapse; width: 100%;">
+      <tbody id="summary-table"></tbody>
+    </table>
   </div>
-  <div id="heatmap" style="
-    display: grid;
-    grid-template-columns: repeat(13, 1fr);
-    grid-auto-rows: 14px;
-    gap: 2px;
-    margin-bottom: 0.5em;
-  "></div>
+
+  <!-- 📈 New Words -->
+  <div style="flex: 1 1 400px; background: #fdfdfd; padding: 1em; border-radius: 8px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #ddd;
+              overflow-x: auto;">
+    <h2 style="margin-top: 0;">New Words Added Per Day</h2>
+    <div style="min-width: 800px; height: 300px; position: relative;">
+      <canvas id="newWordsChart" style="width: 100%; height: 100%;"></canvas>
+    </div>
+  </div>
 </div>
 
-<div style="margin-top: 0.5em; font-size: 0.8em">
-  <span style="display: inline-block; width: 16px; height: 12px; background-color: rgb(255,255,255); border: 1px solid #ccc; margin-right: 4px;"></span> no activity
-  <span style="display: inline-block; width: 16px; height: 12px; background-color: rgb(200,200,255); border: 1px solid #ccc; margin-left: 8px; margin-right: 4px;"></span> low
-  <span style="display: inline-block; width: 16px; height: 12px; background-color: rgb(0,0,255); border: 1px solid #ccc; margin-left: 8px; margin-right: 4px;"></span> high
+<!-- 🧱 Row 2: Heatmap + Pie Chart -->
+<div style="display: flex; gap: 1em; margin-bottom: 1.5em; flex-wrap: wrap;">
+  <!-- 📅 Activity Calendar -->
+  <div style="flex: 1 1 400px; background: #fdfdfd; padding: 1em; border-radius: 8px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #ddd;">
+    <h2 id="calendar-title">Activity Calendar</h2>
+    <div style="display: flex">
+      <div style="display: flex; flex-direction: column; margin-right: 5px; font-size: 0.75em;">
+        <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+      </div>
+      <div id="heatmap" style="
+        display: grid;
+        grid-template-columns: repeat(13, 1fr);
+        grid-auto-rows: 14px;
+        gap: 2px;
+        margin-bottom: 0.5em;
+      "></div>
+    </div>
+    <div style="margin-top: 0.5em; font-size: 0.8em">
+      <span style="display: inline-block; width: 16px; height: 12px; background-color: rgb(255,255,255); border: 1px solid #ccc; margin-right: 4px;"></span> no activity
+      <span style="display: inline-block; width: 16px; height: 12px; background-color: rgb(200,200,255); border: 1px solid #ccc; margin-left: 8px; margin-right: 4px;"></span> low
+      <span style="display: inline-block; width: 16px; height: 12px; background-color: rgb(0,0,255); border: 1px solid #ccc; margin-left: 8px; margin-right: 4px;"></span> high
+    </div>
+  </div>
+
+  <!-- 🥧 Words per Book -->
+  <div style="flex: 1 1 400px; background: #fdfdfd; padding: 1em; border-radius: 8px;
+              box-shadow: 0 2px 4px rgba(0,0,0,0.1); border: 1px solid #ddd;">
+    <h2 style="margin-top: 0;">Words per Book</h2>
+    <div style="width: 100%; height: 300px;">
+      <canvas id="wordsPerBookChart"></canvas>
+    </div>
+  </div>
 </div>
 
+
+
+  <div style="margin-top: 0.5em; font-size: 0.8em">
+    <span style="display: inline-block; width: 16px; height: 12px; background-color: rgb(255,255,255); border: 1px solid #ccc; margin-right: 4px;"></span> no activity
+    <span style="display: inline-block; width: 16px; height: 12px; background-color: rgb(200,200,255); border: 1px solid #ccc; margin-left: 8px; margin-right: 4px;"></span> low
+    <span style="display: inline-block; width: 16px; height: 12px; background-color: rgb(0,0,255); border: 1px solid #ccc; margin-left: 8px; margin-right: 4px;"></span> high
+  </div>
+</div>
 
 
 <h2>Words read</h2>
@@ -75,7 +121,8 @@
 	  });
   });
 
-/* ============================== */  
+
+  /* ============================== */  
 
   function renderHeatmap(data) {
   const container = document.getElementById('heatmap');
@@ -262,5 +309,7 @@
     });
   }
 </script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/stats-summary.js') }}" charset="utf-8"></script>
+
 
 {% endblock %}

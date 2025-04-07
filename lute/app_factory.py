@@ -61,7 +61,7 @@ from lute.themes.routes import bp as themes_bp
 from lute.stats.routes import bp as stats_bp
 from lute.cli.commands import bp as cli_bp
 from lute.stats.heatmap import bp as heatmap_bp
-
+from lute.stats.summary import bp as summary_bp
 
 
 def _setup_app_dir(dirname, readme_content):
@@ -351,6 +351,7 @@ def _create_app(app_config, extra_config):
         app.register_blueprint(dev_api_bp)
 
     app.register_blueprint(heatmap_bp)
+    app.register_blueprint(summary_bp)
     return app
 
 
