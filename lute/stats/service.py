@@ -4,7 +4,7 @@ Calculating stats.
 
 from datetime import datetime, timedelta
 from sqlalchemy import text
-from collections import defaultdict
+
 
 def _get_data_per_lang(session):
     "Return dict of lang name to dict[date_yyyymmdd}: count"
@@ -27,66 +27,35 @@ def _get_data_per_lang(session):
     return ret
 
 
+def _charting_data(readbydate):
+    "Calc data and running total."
+    dates = sorted(readbydate.keys())
+    if len(dates) == 0:
+        return []
+
+    # The line graph needs somewhere to start from for a line
+    # to be drawn on the first day.
+    first_date = datetime.strptime(dates[0], "%Y-%m-%d")
+    day_before_first = first_date - timedelta(days=1)
+    dbf = day_before_first.strftime("%Y-%m-%d")
+    data = [{"readdate": dbf, "wordcount": 0, "runningTotal": 0}]
+
+    total = 0
+    for d in dates:
+        dcount = readbydate.get(d)
+        total += dcount
+        hsh = {"readdate": d, "wordcount": dcount, "runningTotal": total}
+        data.append(hsh)
+    return data
+
+
 def get_chart_data(session):
-    sql = """
-    SELECT
-        LgName AS lang,
-        strftime('%Y-%m-%d', WoStatusChanged) AS dt,
-        COUNT(*) AS updates
-    FROM words
-    JOIN languages ON LgID = WoLgID
-    WHERE WoStatusChanged IS NOT NULL
-    GROUP BY LgName, dt
-    ORDER BY dt
-    """
-    rows = session.execute(text(sql))
-    result = defaultdict(lambda: defaultdict(int))
-    for row in rows:
-        result[row[0]][row[1]] = row[2]
-    return result
-
-
-def get_table_data(session):
-    now = datetime.now()
-    day = now.date().isoformat()
-    week = (now - timedelta(days=7)).date().isoformat()
-    month = (now - timedelta(days=30)).date().isoformat()
-    year = (now - timedelta(days=365)).date().isoformat()
-
-    sql = """
-    SELECT
-        LgName AS lang,
-        WoStatusChanged AS changed
-    FROM words
-    JOIN languages ON LgID = WoLgID
-    WHERE WoStatusChanged IS NOT NULL
-    """
-    rows = session.execute(text(sql))
-    stats = defaultdict(list)
-    for row in rows:
-        stats[row[0]].append(row[1])  # group dates by language
-
-    result = []
-    for lang, dates in stats.items():
-        counts = {
-            "day": 0,
-            "week": 0,
-            "month": 0,
-            "year": 0,
-            "total": len(dates),
-        }
-        for d in dates:
-            if d >= day:
-                counts["day"] += 1
-            if d >= week:
-                counts["week"] += 1
-            if d >= month:
-                counts["month"] += 1
-            if d >= year:
-                counts["year"] += 1
-        result.append({"name": lang, "counts": counts})
-
-    return result
+    "Get data for chart for each language."
+    raw_data = _get_data_per_lang(session)
+    chartdata = {}
+    for k, v in raw_data.items():
+        chartdata[k] = _charting_data(v)
+    return chartdata
 
 
 def _readcount_by_date(readbydate):
@@ -117,3 +86,11 @@ def _readcount_by_date(readbydate):
     }
 
 
+def get_table_data(session):
+    "Wordcounts by lang in time intervals."
+    raw_data = _get_data_per_lang(session)
+
+    ret = []
+    for langname, readbydate in raw_data.items():
+        ret.append({"name": langname, "counts": _readcount_by_date(readbydate)})
+    return ret
